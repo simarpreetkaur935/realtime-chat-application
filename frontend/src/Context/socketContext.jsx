@@ -17,7 +17,7 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     // User logged in
     if (authUser?.user?._id) {
-      const socketInstance = io("http://localhost:3000", {
+      const socketInstance = io("https://realtime-chat-application-bcwz.onrender.com", {
         query: {
           userId: authUser.user._id,
         },

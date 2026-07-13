@@ -27,7 +27,7 @@ const handleSubmit = async (e) => {
 
   try {
     const login = await axios.post(
-      "http://localhost:3000/api/auth/login",
+      "https://realtime-chat-application-bcwz.onrender.com/api/auth/login",
       userInput,
       {
         withCredentials: true,

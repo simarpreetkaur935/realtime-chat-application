@@ -72,7 +72,7 @@ useEffect(() => {
 
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/message/${selectedConversation?._id}`,
+        `https://realtime-chat-application-bcwz.onrender.com/api/message/${selectedConversation?._id}`,
         {
           withCredentials: true,
         }
@@ -128,7 +128,7 @@ useEffect(() => {
 
     try {
       const res = await axios.post(
-        `http://localhost:3000/api/message/send/${selectedConversation?._id}`,
+        `https://realtime-chat-application-bcwz.onrender.com/api/message/send/${selectedConversation?._id}`,
         {
           message: sendData,
         },

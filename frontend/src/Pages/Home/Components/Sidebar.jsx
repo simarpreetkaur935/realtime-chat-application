@@ -49,7 +49,7 @@ const Sidebar = ({ setShowSidebar }) => {
 
             try {
                 const res = await axios.get(
-                    "http://localhost:3000/api/user/currentchatters",
+                    "https://realtime-chat-application-bcwz.onrender.com/api/user/currentchatters",
                     {
                         withCredentials: true,
                     }
@@ -85,7 +85,7 @@ const Sidebar = ({ setShowSidebar }) => {
 
         try {
             const res = await axios.get(
-                `http://localhost:3000/api/user/search?search=${searchInput}`,
+                `https://realtime-chat-application-bcwz.onrender.com/api/user/search?search=${searchInput}`,
                 {
                     withCredentials: true,
                 }

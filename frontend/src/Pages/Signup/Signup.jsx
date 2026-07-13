@@ -53,7 +53,7 @@ const Signup = () => {
 
     try {
       const register = await axios.post(
-        "http://localhost:3000/api/auth/register",
+        "https://realtime-chat-application-bcwz.onrender.com/api/auth/register",
         {
           fullname: userInput.fullname,
           username: userInput.username,
