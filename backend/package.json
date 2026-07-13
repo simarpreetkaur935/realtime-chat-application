@@ -9,9 +9,9 @@
   "author": "Simar kaur",
   "type": "module",
   "main": "server.js",
-  "scripts": {
-    "start": "nodemon server.js"
-  },
+"scripts": {
+  "start": "node server.js"
+},
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
