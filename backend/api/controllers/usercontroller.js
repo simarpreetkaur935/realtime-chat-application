@@ -137,8 +137,8 @@ export const userLogOut = async (req, res) => {
     res.cookie("jwt", "", {
       maxAge: 0,
       httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.SECURE !== "development",
+      sameSite: "none",
+      secure: true,
     });
 
     return res.status(200).json({
