@@ -34,6 +34,7 @@ export const initSocket = (server) => {
       delete userSocketMap[userId];
 
       io.emit("getOnlineUsers", Object.keys(userSocketMap));
+      console.log("Online Users:", Object.keys(userSocketMap));
     });
   });
 };

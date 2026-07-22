@@ -26,6 +26,13 @@ export const SocketContextProvider = ({ children }) => {
       setSocket(socketInstance);
 
       socketInstance.on("getOnlineUsers", (users) => {
+        console.log("========== ONLINE USERS ==========");
+        console.log(users);
+
+        users.forEach((id) => {
+          console.log("Online User ID:", id);
+        });
+
         setOnlineUsers(users);
       });
 
