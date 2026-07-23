@@ -60,22 +60,23 @@ const Signup = () => {
           email: userInput.email,
           password: userInput.password,
           gender: userInput.gender,
-        },
-        {
-          withCredentials: true,
         }
       );
 
       const data = register.data;
 
-      if (data.success === false) {
+      if (!data.success) {
         setLoading(false);
         return toast.error(data.message);
       }
 
-      toast.success(data.message);
+      // Save JWT Token
+      localStorage.setItem("token", data.token);
 
+      // Save User Data
       localStorage.setItem("chatapp", JSON.stringify(data));
+
+      toast.success(data.message);
 
       setLoading(false);
 
@@ -93,11 +94,8 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200">
-
       <div className="card w-full max-w-md bg-base-100 shadow-2xl my-8">
-
         <div className="card-body">
-
           <h1 className="text-3xl font-bold text-center">
             Sign Up
             <span className="text-primary"> Chatters</span>
@@ -107,9 +105,7 @@ const Signup = () => {
             onSubmit={handleSubmit}
             className="space-y-4 mt-6"
           >
-
             {/* Full Name */}
-
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold">
@@ -128,7 +124,6 @@ const Signup = () => {
             </div>
 
             {/* Username */}
-
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold">
@@ -147,7 +142,6 @@ const Signup = () => {
             </div>
 
             {/* Email */}
-
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold">
@@ -166,7 +160,6 @@ const Signup = () => {
             </div>
 
             {/* Password */}
-
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold">
@@ -185,7 +178,6 @@ const Signup = () => {
             </div>
 
             {/* Confirm Password */}
-
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-semibold">
@@ -204,9 +196,7 @@ const Signup = () => {
             </div>
 
             {/* Gender */}
-
             <div className="form-control">
-
               <label className="label">
                 <span className="label-text font-semibold">
                   Gender
@@ -214,7 +204,6 @@ const Signup = () => {
               </label>
 
               <div className="flex gap-8">
-
                 <label className="cursor-pointer flex items-center gap-2">
                   <span>Male</span>
 
@@ -238,13 +227,10 @@ const Signup = () => {
                     onChange={() => handleGender("female")}
                   />
                 </label>
-
               </div>
-
             </div>
 
             {/* Signup Button */}
-
             <button
               type="submit"
               className="btn btn-primary w-full mt-4"
@@ -252,7 +238,6 @@ const Signup = () => {
             >
               {loading ? "Signing Up..." : "Sign Up"}
             </button>
-
           </form>
 
           <p className="text-center mt-4">
@@ -264,11 +249,8 @@ const Signup = () => {
               Login Now!!
             </Link>
           </p>
-
         </div>
-
       </div>
-
     </div>
   );
 };

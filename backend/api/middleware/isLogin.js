@@ -3,15 +3,18 @@ import User from "../model/user.js";
 
 const isLogin = async (req, res, next) => {
   try {
-    // Get JWT Token from Cookie
-    const token = req.cookies.jwt;
+    // Get Authorization Header
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         message: "User Unauthorized",
       });
     }
+
+    // Extract Token
+    const token = authHeader.split(" ")[1];
 
     // Verify Token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

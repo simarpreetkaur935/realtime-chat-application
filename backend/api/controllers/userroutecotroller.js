@@ -45,7 +45,8 @@ export const getUserBySearch = async (req, res) => {
     });
   }
 };
-//sorting
+
+// Get Current Chatters
 export const getCurrentChatters = async (req, res) => {
   try {
     const currentUserId = req.user._id;
@@ -59,23 +60,25 @@ export const getCurrentChatters = async (req, res) => {
 
     // If no conversations exist
     if (!currentChatters || currentChatters.length === 0) {
-      return res.status(200).json([]);
+      return res.status(200).json({
+        success: true,
+        users: [],
+      });
     }
 
     // Get all participant IDs except the logged-in user
-    const participantsIDs = currentChatters.reduce(
-      (ids, conversation) => {
-        const otherParticipants = conversation.participants.filter(
-          (id) => id.toString() !== currentUserId.toString()
-        );
+    const participantsIDs = currentChatters.reduce((ids, conversation) => {
+      const otherParticipants = conversation.participants.filter(
+        (id) => id.toString() !== currentUserId.toString()
+      );
 
-        return [...ids, ...otherParticipants];
-      },
-      []
-    );
+      return [...ids, ...otherParticipants];
+    }, []);
 
     // Remove duplicate IDs
-    const uniqueParticipantIDs = [...new Set(participantsIDs.map(id => id.toString()))];
+    const uniqueParticipantIDs = [
+      ...new Set(participantsIDs.map((id) => id.toString())),
+    ];
 
     // Fetch users
     const users = await User.find({
@@ -86,7 +89,6 @@ export const getCurrentChatters = async (req, res) => {
       success: true,
       users,
     });
-
   } catch (error) {
     console.error("Get Current Chatters Error:", error);
 

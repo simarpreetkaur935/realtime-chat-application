@@ -47,13 +47,15 @@ export const userRegister = async (req, res) => {
 
     // Save User
     await newUser.save();
-    jwtToken(newUser._id, res);
 
+    // Generate JWT Token
+    const token = jwtToken(newUser._id);
 
     // Response
     return res.status(201).json({
       success: true,
       message: "User Registered Successfully",
+      token,
       user: {
         _id: newUser._id,
         fullname: newUser.fullname,
@@ -72,8 +74,8 @@ export const userRegister = async (req, res) => {
     });
   }
 };
-///login
 
+/// Login
 export const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -107,12 +109,13 @@ export const userLogin = async (req, res) => {
     }
 
     // Generate JWT Token
-    jwtToken(user._id, res);
+    const token = jwtToken(user._id);
 
     // Success Response
     return res.status(200).json({
       success: true,
       message: "Login Successfully",
+      token,
       user: {
         _id: user._id,
         fullname: user.fullname,
@@ -131,16 +134,10 @@ export const userLogin = async (req, res) => {
     });
   }
 };
-//logout
+
+/// Logout
 export const userLogOut = async (req, res) => {
   try {
-    res.cookie("jwt", "", {
-      maxAge: 0,
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
-
     return res.status(200).json({
       success: true,
       message: "User Logged Out Successfully",

@@ -18,40 +18,40 @@ const MessageContainer = ({ setShowSidebar }) => {
     setSelectedConversation,
   } = userConversation();
   console.log("messages =", messages);
-console.log("Is Array =", Array.isArray(messages));
-console.log("Type =", typeof messages);
+  console.log("Is Array =", Array.isArray(messages));
+  console.log("Type =", typeof messages);
 
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendData, setSendData] = useState("");
-  const {socket} = useSocketContext();
+  const { socket } = useSocketContext();
 
-  
+
   const lastMessageRef = useRef();
 
 
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  socket.on("newMessage", (newMessage) => {
-    console.log("Socket Message:", newMessage);
+    socket.on("newMessage", (newMessage) => {
+      console.log("Socket Message:", newMessage);
 
-    const sound = new Audio(Notification);
-    sound.play();
+      const sound = new Audio(Notification);
+      sound.play();
 
-    setMessages((prev) => {
-      if (!Array.isArray(prev)) {
-        return [newMessage];
-      }
+      setMessages((prev) => {
+        if (!Array.isArray(prev)) {
+          return [newMessage];
+        }
 
-      return [...prev, newMessage];
+        return [...prev, newMessage];
+      });
     });
-  });
 
-  return () => {
-    socket.off("newMessage");
-  };
-}, [socket]);
+    return () => {
+      socket.off("newMessage");
+    };
+  }, [socket]);
 
   // ================= Auto Scroll =================
 
@@ -66,50 +66,51 @@ console.log("Type =", typeof messages);
   }, [messages]);
 
   // ================= Get Messages =================
-useEffect(() => {
-  const getMessages = async () => {
-    setLoading(true);
+  useEffect(() => {
+    const getMessages = async () => {
+      setLoading(true);
 
-    try {
-      const res = await axios.get(
-        `https://realtime-chat-application-bcwz.onrender.com/api/message/${selectedConversation?._id}`,
-        {
-          withCredentials: true,
+      try {
+        const res = await axios.get(
+          `https://realtime-chat-application-bcwz.onrender.com/api/message/${selectedConversation?._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        console.log("Full API Response:", res.data);
+
+        const data = res.data;
+
+        if (!data.success) {
+          console.log(data.message);
+          setMessages([]);
+          setLoading(false);
+          return;
         }
-      );
 
-      console.log("Full API Response:", res.data);
+        console.log("Messages:", data.messages);
+        console.log("Is Array:", Array.isArray(data.messages));
 
-      const data = res.data;
+        if (Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        } else {
+          setMessages([]);
+        }
 
-      if (!data.success) {
-        console.log(data.message);
+        setLoading(false);
+      } catch (error) {
+        console.log(error);
         setMessages([]);
         setLoading(false);
-        return;
       }
+    };
 
-      console.log("Messages:", data.messages);
-      console.log("Is Array:", Array.isArray(data.messages));
-
-      if (Array.isArray(data.messages)) {
-        setMessages(data.messages);
-      } else {
-        setMessages([]);
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-      setMessages([]);
-      setLoading(false);
+    if (selectedConversation?._id) {
+      getMessages();
     }
-  };
-
-  if (selectedConversation?._id) {
-    getMessages();
-  }
-}, [selectedConversation?._id]);
+  }, [selectedConversation?._id]);
 
   // ================= Handle Input =================
 
@@ -133,28 +134,30 @@ useEffect(() => {
           message: sendData,
         },
         {
-          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
       );
 
-     const data = res.data;
+      const data = res.data;
 
-if (data.success === false) {
-  console.log(data.message);
-  setSending(false);
-  return;
-}
+      if (data.success === false) {
+        console.log(data.message);
+        setSending(false);
+        return;
+      }
 
-setMessages((prev) => {
-  if (!Array.isArray(prev)) {
-    return [data.newMessage];
-  }
+      setMessages((prev) => {
+        if (!Array.isArray(prev)) {
+          return [data.newMessage];
+        }
 
-  return [...prev, data.newMessage];
-});
+        return [...prev, data.newMessage];
+      });
 
-setSendData("");
-setSending(false);
+      setSendData("");
+      setSending(false);
     } catch (error) {
       console.log(error);
       setSending(false);
@@ -229,80 +232,78 @@ setSending(false);
 
           {/* Messages */}
 
-       {/* Messages */}
+          {/* Messages */}
 
-<div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-4">
 
-  {loading ? (
+            {loading ? (
 
-    <div className="flex justify-center items-center h-full">
-      Loading...
-    </div>
+              <div className="flex justify-center items-center h-full">
+                Loading...
+              </div>
 
-  ) : messages?.length === 0 ? (
+            ) : messages?.length === 0 ? (
 
-    <p className="text-center text-gray-500">
-      Send a message to start conversation
-    </p>
+              <p className="text-center text-gray-500">
+                Send a message to start conversation
+              </p>
 
-  ) : (
+            ) : (
 
-    Array.isArray(messages) &&
-messages
-  .filter((message) => message)
-  .map((message) => (
-        <div
-          key={message?._id}
-          ref={lastMessageRef}
-          className={`chat ${
-            message?.senderId === authUser?.user?._id
-              ? "chat-end"
-              : "chat-start"
-          }`}
-        >
-          <div className="chat-image avatar">
-            <div className="w-10 rounded-full">
+              Array.isArray(messages) &&
+              messages
+                .filter((message) => message)
+                .map((message) => (
+                  <div
+                    key={message?._id}
+                    ref={lastMessageRef}
+                    className={`chat ${message?.senderId === authUser?.user?._id
+                        ? "chat-end"
+                        : "chat-start"
+                      }`}
+                  >
+                    <div className="chat-image avatar">
+                      <div className="w-10 rounded-full">
 
-              <img
-                src={
-                  message?.senderId === authUser?.user?._id
-                    ? authUser?.user?.profilepic
-                    : selectedConversation?.profilepic
-                }
-                alt=""
-              />
+                        <img
+                          src={
+                            message?.senderId === authUser?.user?._id
+                              ? authUser?.user?.profilepic
+                              : selectedConversation?.profilepic
+                          }
+                          alt=""
+                        />
 
-            </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`chat-bubble ${message?.senderId === authUser?.user?._id
+                          ? "bg-sky-600 text-white"
+                          : ""
+                        }`}
+                    >
+                      {message?.message}
+                    </div>
+
+                    <div className="chat-footer text-[10px] opacity-70">
+                      {message?.createdAt &&
+                        new Date(message.createdAt).toLocaleDateString("en-IN")}
+                      {" "}
+                      {message?.createdAt &&
+                        new Date(message.createdAt).toLocaleTimeString("en-IN", {
+                          hour: "numeric",
+                          minute: "numeric",
+                        })}
+                    </div>
+
+                  </div>
+
+                ))
+
+            )}
+
           </div>
-
-          <div
-            className={`chat-bubble ${
-              message?.senderId === authUser?.user?._id
-                ? "bg-sky-600 text-white"
-                : ""
-            }`}
-          >
-            {message?.message}
-          </div>
-
-          <div className="chat-footer text-[10px] opacity-70">
-            {message?.createdAt &&
-              new Date(message.createdAt).toLocaleDateString("en-IN")}
-            {" "}
-            {message?.createdAt &&
-              new Date(message.createdAt).toLocaleTimeString("en-IN", {
-                hour: "numeric",
-                minute: "numeric",
-              })}
-          </div>
-
-        </div>
-
-      ))
-
-  )}
-
-</div>
 
           {/* Send Message */}
 

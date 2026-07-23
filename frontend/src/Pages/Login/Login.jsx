@@ -6,7 +6,8 @@ import { useAuth } from "../../Context/AuthContext.jsx";
 
 const Login = () => {
   const navigate = useNavigate();
-  const {setAuthUser} = useAuth();
+  const { setAuthUser } = useAuth();
+
   const [userInput, setUserInput] = useState({
     email: "",
     password: "",
@@ -21,67 +22,59 @@ const Login = () => {
     });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const login = await axios.post(
-      "https://realtime-chat-application-bcwz.onrender.com/api/auth/login",
-      userInput,
-      {
-        withCredentials: true,
+    try {
+      const login = await axios.post(
+        "https://realtime-chat-application-bcwz.onrender.com/api/auth/login",
+        userInput
+      );
+
+      const data = login.data;
+    
+      if (!data.success) {
+        setLoading(false);
+        toast.error(data.message);
+        return;
       }
-    );
 
-    const data = login.data;
+      // Save JWT Token
+      localStorage.setItem("token", data.token);
 
-    if (data.success === false) {
+      // Save User Data
+      localStorage.setItem("chatapp", JSON.stringify(data));
+
+      setAuthUser(data);
+
+      toast.success(data.message);
+
       setLoading(false);
-      toast.error(data.message);
-      console.log(data.message)
-      return;
+
+      navigate("/");
+    } catch (error) {
+      setLoading(false);
+
+      console.log(error);
+
+      toast.error(error.response?.data?.message || "Login Failed");
     }
-
-    toast.success(data.message);
-
-    localStorage.setItem("chatapp", JSON.stringify(data));
-    setAuthUser(data);
-    setLoading(false);
-
-    // Uncomment this after you create the Home page
-    navigate("/");
-
-  } catch (error) {
-    setLoading(false);
-
-    console.log(error);
-
-    toast.error(error.response?.data?.message || "Login Failed");
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200">
       <div className="card w-full max-w-md bg-base-100 shadow-2xl">
         <div className="card-body">
-
           <h1 className="text-3xl font-bold text-center">
             Login
             <span className="text-primary"> Chatters</span>
           </h1>
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 mt-6"
-          >
-            {/* Email */}
-
+          <form onSubmit={handleSubmit} className="space-y-4 mt-6">
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">
-                  Email
-                </span>
+                <span className="label-text font-semibold">Email</span>
               </label>
 
               <input
@@ -94,13 +87,9 @@ const handleSubmit = async (e) => {
               />
             </div>
 
-            {/* Password */}
-
             <div className="form-control">
               <label className="label">
-                <span className="label-text font-semibold">
-                  Password
-                </span>
+                <span className="label-text font-semibold">Password</span>
               </label>
 
               <input
@@ -131,7 +120,6 @@ const handleSubmit = async (e) => {
               Sign Up
             </Link>
           </p>
-
         </div>
       </div>
     </div>

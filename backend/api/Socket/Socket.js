@@ -6,16 +6,13 @@ const userSocketMap = {};
 
 export const initSocket = (server) => {
   io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://realtime-chat-application-gilt.vercel.app",
-    ],
-    credentials: true,
-  },
-});
-
-
+    cors: {
+      origin: [
+        "http://localhost:5173",
+        "https://realtime-chat-application-gilt.vercel.app",
+      ],
+    },
+  });
 
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;

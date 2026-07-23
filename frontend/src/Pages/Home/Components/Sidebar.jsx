@@ -34,14 +34,16 @@ const Sidebar = ({ setShowSidebar }) => {
         const confirmLogout = window.confirm("Are you sure you want to logout?");
 
         if (confirmLogout) {
+            localStorage.removeItem("token");
             localStorage.removeItem("chatapp");
+
             setAuthUser(null);
+
             navigate("/login");
         } else {
             toast.info("Logout cancelled");
         }
     };
-
     // current chatters
 
     useEffect(() => {
@@ -52,7 +54,9 @@ const Sidebar = ({ setShowSidebar }) => {
                 const res = await axios.get(
                     "https://realtime-chat-application-bcwz.onrender.com/api/user/currentchatters",
                     {
-                        withCredentials: true,
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
                     }
                 );
                 console.log(res.data);
@@ -69,9 +73,9 @@ const Sidebar = ({ setShowSidebar }) => {
                 setChatUser(data.users);
                 setLoading(false);
             } catch (error) {
-    setLoading(false);
-    console.log(error);
-}
+                setLoading(false);
+                console.log(error);
+            }
         };
 
         chatUserHandler();
@@ -88,7 +92,9 @@ const Sidebar = ({ setShowSidebar }) => {
             const res = await axios.get(
                 `https://realtime-chat-application-bcwz.onrender.com/api/user/search?search=${searchInput}`,
                 {
-                    withCredentials: true,
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
                 }
             );
 
