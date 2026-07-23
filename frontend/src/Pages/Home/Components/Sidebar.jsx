@@ -69,9 +69,17 @@ const Sidebar = ({ setShowSidebar }) => {
                 setChatUser(data.users);
                 setLoading(false);
             } catch (error) {
-                setLoading(false);
-                console.log(error);
-            }
+    setLoading(false);
+
+    console.log(error);
+
+    alert(
+        JSON.stringify({
+            status: error.response?.status,
+            message: error.response?.data?.message,
+        })
+    );
+}
         };
 
         chatUserHandler();
