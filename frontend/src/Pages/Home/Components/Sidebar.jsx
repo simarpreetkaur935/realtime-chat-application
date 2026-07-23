@@ -71,14 +71,8 @@ const Sidebar = ({ setShowSidebar }) => {
             } catch (error) {
     setLoading(false);
 
-    console.log(error);
+    
 
-    alert(
-        JSON.stringify({
-            status: error.response?.status,
-            message: error.response?.data?.message,
-        })
-    );
 }
         };
 
