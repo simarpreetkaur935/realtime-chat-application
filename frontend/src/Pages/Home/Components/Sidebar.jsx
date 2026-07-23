@@ -137,39 +137,37 @@ const Sidebar = ({ setShowSidebar }) => {
 
     return (
         <div className="h-full flex flex-col">
+{/* Search Bar */}
 
-            {/* Search Bar */}
+<div className="p-4 flex items-center gap-2">
 
-            <div className="p-4 flex items-center gap-3">
+    <form
+        onSubmit={handleSearchSubmit}
+        className="flex flex-1 items-center bg-white rounded-full shadow-md overflow-hidden min-w-0"
+    >
+        <input
+            type="text"
+            placeholder="Search User"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="flex-1 min-w-0 px-3 py-2 outline-none bg-transparent"
+        />
 
-                <form
-                    onSubmit={handleSearchSubmit}
-                    className="flex flex-1 items-center bg-white rounded-full shadow-md overflow-hidden"
-                >
-                    <input
-                        type="text"
-                        placeholder="Search User"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        className="flex-1 px-5 py-3 outline-none bg-transparent"
-                    />
+        <button
+            type="submit"
+            className="w-10 h-10 sm:w-12 sm:h-12 bg-sky-700 hover:bg-sky-800 text-white flex items-center justify-center flex-shrink-0"
+        >
+            <FaSearch />
+        </button>
+    </form>
 
-                    <button
-                        type="submit"
-                        className="w-14 h-14 bg-sky-700 hover:bg-sky-800 text-white flex justify-center items-center"
-                    >
-                        <FaSearch />
-                    </button>
-                </form>
+    <img
+        src={authUser?.user?.profilepic}
+        alt="Profile"
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover cursor-pointer flex-shrink-0"
+    />
 
-                <img
-
-                    src={authUser?.user?.profilepic}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full object-cover cursor-pointer hover:scale-110 transition"
-                />
-
-            </div>
+</div>
 
             <div className="divider px-3"></div>
 
