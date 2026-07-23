@@ -11,6 +11,20 @@ A full-stack real-time chat application built using the **MERN Stack**. The appl
 
 ---
 
+## 🔑 Demo Login Credentials
+
+> Use the demo accounts below to explore the application and experience how the real-time chat system works, including user authentication, online status, and instant messaging.
+
+### 👤 Demo User 1
+**Email:** simar@gmail.com  
+**Password:** Simar@123
+
+### 👤 Demo User 2
+**Email:** param@gmail.com  
+**Password:** Param@123
+
+> **Note:** Open the application in two different browsers (or one normal window and one Incognito window) and log in with the two demo accounts to experience real-time messaging and online status updates.
+
 ## 🚀 Features
 
 - 🔐 Secure User Authentication (JWT)
