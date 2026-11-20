@@ -2,7 +2,9 @@ import { Server } from "socket.io";
 
 let io;
 
-const userSocketMap = {};
+const userSocketMap = new Map();
+
+const getOnlineUserIds = () => [...userSocketMap.keys()];
 
 export const initSocket = (server) => {
   io = new Server(server, {
@@ -15,23 +17,28 @@ export const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId;
+    const userId = String(socket.handshake.query.userId || "");
 
     console.log("User Connected:", userId);
 
     if (userId) {
-      userSocketMap[userId] = socket.id;
+      const sockets = userSocketMap.get(userId) || new Set();
+      sockets.add(socket.id);
+      userSocketMap.set(userId, sockets);
+      socket.join(`user:${userId}`);
     }
 
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    io.emit("getOnlineUsers", getOnlineUserIds());
 
     socket.on("disconnect", () => {
       console.log("User Disconnected:", userId);
 
-      delete userSocketMap[userId];
+      const sockets = userSocketMap.get(userId);
+      sockets?.delete(socket.id);
+      if (sockets?.size === 0) userSocketMap.delete(userId);
 
-      io.emit("getOnlineUsers", Object.keys(userSocketMap));
-      console.log("Online Users:", Object.keys(userSocketMap));
+      io.emit("getOnlineUsers", getOnlineUserIds());
+      console.log("Online Users:", getOnlineUserIds());
     });
   });
 };
@@ -39,5 +46,5 @@ export const initSocket = (server) => {
 export { io };
 
 export const getReceiverSocketId = (receiverId) => {
-  return userSocketMap[receiverId];
+  return userSocketMap.get(String(receiverId));
 };

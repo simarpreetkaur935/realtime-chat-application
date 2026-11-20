@@ -19,6 +19,11 @@ const messageSchema = new mongoose.Schema(
       required: true,
     },
 
+    readAt: {
+      type: Date,
+      default: null,
+    },
+
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "../config/api";
 
 const SocketContext = createContext();
 
@@ -15,9 +16,8 @@ export const SocketContextProvider = ({ children }) => {
   const { authUser } = useAuth();
 
   useEffect(() => {
-    // User logged in
     if (authUser?.user?._id) {
-      const socketInstance = io("https://realtime-chat-application-bcwz.onrender.com", {
+      const socketInstance = io(API_URL, {
         query: {
           userId: authUser.user._id,
         },
@@ -26,14 +26,7 @@ export const SocketContextProvider = ({ children }) => {
       setSocket(socketInstance);
 
       socketInstance.on("getOnlineUsers", (users) => {
-        console.log("========== ONLINE USERS ==========");
-        console.log(users);
-
-        users.forEach((id) => {
-          console.log("Online User ID:", id);
-        });
-
-        setOnlineUsers(users);
+        setOnlineUsers(Array.isArray(users) ? users.map(String) : []);
       });
 
       return () => {
@@ -42,11 +35,8 @@ export const SocketContextProvider = ({ children }) => {
       };
     }
 
-    // User logged out
-    if (socket) {
-      socket.close();
-      setSocket(null);
-    }
+    setOnlineUsers([]);
+    setSocket(null);
   }, [authUser]);
 
   return (

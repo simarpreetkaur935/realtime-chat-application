@@ -1,5 +1,6 @@
 import User from "../model/user.js";
 import Conversation from "../model/conversation.js";
+import Message from "../model/message.js";
 
 export const getUserBySearch = async (req, res) => {
   try {
@@ -51,12 +52,12 @@ export const getCurrentChatters = async (req, res) => {
   try {
     const currentUserId = req.user._id;
 
-    // Get all conversations of the logged-in user
+    // Get conversations newest first so the chat list is ordered by activity.
     const currentChatters = await Conversation.find({
       participants: currentUserId,
     }).sort({
       updatedAt: -1,
-    });
+    }).lean();
 
     // If no conversations exist
     if (!currentChatters || currentChatters.length === 0) {
@@ -66,28 +67,55 @@ export const getCurrentChatters = async (req, res) => {
       });
     }
 
-    // Get all participant IDs except the logged-in user
-    const participantsIDs = currentChatters.reduce((ids, conversation) => {
-      const otherParticipants = conversation.participants.filter(
-        (id) => id.toString() !== currentUserId.toString()
-      );
+    const participantIds = currentChatters.map((conversation) =>
+      conversation.participants.find((id) => id.toString() !== currentUserId.toString())
+    ).filter(Boolean);
+    const conversationIds = currentChatters.map(({ _id }) => _id);
+    const [users, messages, unreadCounts] = await Promise.all([
+      User.find({ _id: { $in: participantIds } }).select("-password").lean(),
+      Message.find({ conversationId: { $in: conversationIds } })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Message.aggregate([
+        {
+          $match: {
+            conversationId: { $in: conversationIds },
+            receiverId: currentUserId,
+            readAt: { $exists: true, $eq: null },
+          },
+        },
+        { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+      ]),
+    ]);
 
-      return [...ids, ...otherParticipants];
-    }, []);
+    const usersById = new Map(users.map((user) => [user._id.toString(), user]));
+    const latestMessageByConversation = new Map();
+    for (const message of messages) {
+      const conversationId = message.conversationId.toString();
+      if (!latestMessageByConversation.has(conversationId)) {
+        latestMessageByConversation.set(conversationId, message);
+      }
+    }
+    const unreadCountByConversation = new Map(
+      unreadCounts.map(({ _id, count }) => [_id.toString(), count])
+    );
 
-    // Remove duplicate IDs
-    const uniqueParticipantIDs = [
-      ...new Set(participantsIDs.map((id) => id.toString())),
-    ];
-
-    // Fetch users
-    const users = await User.find({
-      _id: { $in: uniqueParticipantIDs },
-    }).select("-password");
+    const chatUsers = currentChatters.flatMap((conversation, index) => {
+      const participantId = participantIds[index];
+      const user = usersById.get(participantId.toString());
+      if (!user) return [];
+      const lastMessage = latestMessageByConversation.get(conversation._id.toString());
+      return [{
+        ...user,
+        lastMessage: lastMessage?.message || "",
+        lastMessageAt: lastMessage?.createdAt || conversation.updatedAt,
+        unreadCount: unreadCountByConversation.get(conversation._id.toString()) || 0,
+      }];
+    });
 
     return res.status(200).json({
       success: true,
-      users,
+      users: chatUsers,
     });
   } catch (error) {
     console.error("Get Current Chatters Error:", error);

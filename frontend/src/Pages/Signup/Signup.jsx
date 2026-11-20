@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_URL } from "../../config/api.js";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ const Signup = () => {
 
     try {
       const register = await axios.post(
-        "https://realtime-chat-application-bcwz.onrender.com/api/auth/register",
+        `${API_URL}/api/auth/register`,
         {
           fullname: userInput.fullname,
           username: userInput.username,

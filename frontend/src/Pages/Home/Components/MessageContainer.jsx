@@ -6,6 +6,8 @@ import { useAuth } from "../../../Context/AuthContext";
 import userConversation from "../../../Zustand/userConversation";
 import Notification from "../../../notification/notification.wav";
 import { useSocketContext } from "../../../Context/socketContext";
+import { toast } from "react-toastify";
+import { API_URL } from "../../../config/api";
 
 
 const MessageContainer = ({ setShowSidebar }) => {
@@ -17,14 +19,13 @@ const MessageContainer = ({ setShowSidebar }) => {
     selectedConversation,
     setSelectedConversation,
   } = userConversation();
-  console.log("messages =", messages);
-  console.log("Is Array =", Array.isArray(messages));
-  console.log("Type =", typeof messages);
 
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendData, setSendData] = useState("");
   const { socket } = useSocketContext();
+  const activeConversationRef = useRef(selectedConversation);
+  activeConversationRef.current = selectedConversation;
 
 
   const lastMessageRef = useRef();
@@ -33,23 +34,53 @@ const MessageContainer = ({ setShowSidebar }) => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("newMessage", (newMessage) => {
-      console.log("Socket Message:", newMessage);
+    const handleNewMessage = (newMessage) => {
+      const senderId = String(newMessage?.senderId?._id ?? newMessage?.senderId);
+      const activeUser = activeConversationRef.current;
+      const isCurrentConversation = activeUser && String(activeUser._id) === senderId;
+
+      window.dispatchEvent(new CustomEvent("chat:new-message", {
+        detail: {
+          userId: senderId,
+          user: {
+            _id: senderId,
+            username: newMessage?.senderName || activeUser?.username,
+            profilepic: newMessage?.senderProfilePic || activeUser?.profilepic,
+          },
+          message: newMessage,
+          received: true,
+        },
+      }));
+
+      if (isCurrentConversation) {
+        setMessages((previous) => {
+          const current = Array.isArray(previous) ? previous : [];
+          if (current.some((message) => String(message?._id) === String(newMessage?._id))) return current;
+          return [...current, newMessage];
+        });
+        axios.patch(`${API_URL}/api/message/read/${activeUser._id}`, {}, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }).catch(() => {});
+      }
+
+      const senderName = newMessage?.senderName || (isCurrentConversation ? activeUser.username : "Someone");
+      toast.info(`New message from ${senderName}`, { toastId: `message-${newMessage?._id}` });
 
       const sound = new Audio(Notification);
-      sound.play();
+      sound.play().catch(() => {});
 
-      setMessages((prev) => {
-        if (!Array.isArray(prev)) {
-          return [newMessage];
-        }
+      if (document.hidden && "Notification" in window && window.Notification.permission === "granted") {
+        new window.Notification(`Message from ${senderName}`, {
+          body: newMessage?.message,
+          icon: newMessage?.senderProfilePic || activeUser?.profilepic,
+        });
+      }
+    };
 
-        return [...prev, newMessage];
-      });
-    });
+    socket.on("newMessage", handleNewMessage);
 
     return () => {
-      socket.off("newMessage");
+      socket.off("newMessage", handleNewMessage);
     };
   }, [socket]);
 
@@ -68,47 +99,49 @@ const MessageContainer = ({ setShowSidebar }) => {
   // ================= Get Messages =================
   useEffect(() => {
     const getMessages = async () => {
+      const conversationId = String(selectedConversation._id);
       setLoading(true);
+      setMessages([]);
 
       try {
         const res = await axios.get(
-          `https://realtime-chat-application-bcwz.onrender.com/api/message/${selectedConversation?._id}`,
+          `${API_URL}/api/message/${selectedConversation?._id}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
-        console.log("Full API Response:", res.data);
-
         const data = res.data;
 
         if (!data.success) {
-          console.log(data.message);
-          setMessages([]);
+          if (String(activeConversationRef.current?._id) === conversationId) setMessages([]);
           setLoading(false);
           return;
         }
 
-        console.log("Messages:", data.messages);
-        console.log("Is Array:", Array.isArray(data.messages));
-
-        if (Array.isArray(data.messages)) {
-          setMessages(data.messages);
-        } else {
-          setMessages([]);
+        if (String(activeConversationRef.current?._id) !== conversationId) {
+          setLoading(false);
+          return;
         }
+        const fetchedMessages = Array.isArray(data.messages) ? data.messages : [];
+        setMessages((current) => {
+          const byId = new Map(fetchedMessages.map((message) => [String(message?._id), message]));
+          (Array.isArray(current) ? current : []).forEach((message) => byId.set(String(message?._id), message));
+          return [...byId.values()];
+        });
 
         setLoading(false);
       } catch (error) {
-        console.log(error);
-        setMessages([]);
+        if (String(activeConversationRef.current?._id) === conversationId) setMessages([]);
         setLoading(false);
       }
     };
 
     if (selectedConversation?._id) {
       getMessages();
+    } else {
+      setMessages([]);
     }
   }, [selectedConversation?._id]);
 
@@ -129,7 +162,7 @@ const MessageContainer = ({ setShowSidebar }) => {
 
     try {
       const res = await axios.post(
-        `https://realtime-chat-application-bcwz.onrender.com/api/message/send/${selectedConversation?._id}`,
+        `${API_URL}/api/message/send/${selectedConversation?._id}`,
         {
           message: sendData,
         },
@@ -143,23 +176,28 @@ const MessageContainer = ({ setShowSidebar }) => {
       const data = res.data;
 
       if (data.success === false) {
-        console.log(data.message);
         setSending(false);
         return;
       }
 
       setMessages((prev) => {
-        if (!Array.isArray(prev)) {
-          return [data.newMessage];
-        }
-
-        return [...prev, data.newMessage];
+        const current = Array.isArray(prev) ? prev : [];
+        if (current.some((message) => String(message?._id) === String(data.newMessage?._id))) return current;
+        return [...current, data.newMessage];
       });
+
+      window.dispatchEvent(new CustomEvent("chat:new-message", {
+        detail: {
+          userId: String(selectedConversation._id),
+          user: selectedConversation,
+          message: data.newMessage,
+          received: false,
+        },
+      }));
 
       setSendData("");
       setSending(false);
     } catch (error) {
-      console.log(error);
       setSending(false);
     }
   };
@@ -175,7 +213,7 @@ const MessageContainer = ({ setShowSidebar }) => {
   };
 
   return (
-    <div className="md:min-w-[500px] h-full flex flex-col py-2">
+    <div className="w-full min-w-0 h-full flex flex-col p-3 sm:p-4">
 
       {selectedConversation === null ? (
 
@@ -203,11 +241,12 @@ const MessageContainer = ({ setShowSidebar }) => {
 
           {/* Header */}
 
-          <div className="flex justify-between items-center bg-sky-600 rounded-lg px-4 py-3">
+          <div className="flex justify-between items-center bg-sky-700 rounded-xl px-4 py-3 shadow-sm shrink-0">
 
             <button
               onClick={handleBack}
-              className="bg-white rounded-full p-2"
+              aria-label="Back to conversations"
+              className="bg-white text-sky-700 rounded-full p-2 hover:bg-sky-50 transition-colors"
             >
               <IoArrowBackSharp size={22} />
             </button>
@@ -217,7 +256,7 @@ const MessageContainer = ({ setShowSidebar }) => {
               <img
                 src={selectedConversation?.profilepic}
                 alt=""
-                className="w-10 h-10 rounded-full"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30"
               />
 
               <span className="text-white font-bold">
@@ -234,12 +273,12 @@ const MessageContainer = ({ setShowSidebar }) => {
 
           {/* Messages */}
 
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 min-h-0 overflow-auto p-3 sm:p-5 chat-scrollbar">
 
             {loading ? (
 
-              <div className="flex justify-center items-center h-full">
-                Loading...
+              <div className="flex justify-center items-center h-full text-slate-500">
+                Loading messages…
               </div>
 
             ) : messages?.length === 0 ? (
@@ -278,15 +317,15 @@ const MessageContainer = ({ setShowSidebar }) => {
                     </div>
 
                     <div
-                      className={`chat-bubble ${message?.senderId === authUser?.user?._id
-                          ? "bg-sky-600 text-white"
-                          : ""
+                      className={`max-w-[min(78%,34rem)] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 shadow-sm ${message?.senderId === authUser?.user?._id
+                          ? "bg-sky-700 text-white rounded-br-md"
+                          : "bg-white text-slate-900 border border-slate-200 rounded-bl-md"
                         }`}
                     >
                       {message?.message}
                     </div>
 
-                    <div className="chat-footer text-[10px] opacity-70">
+                    <div className="chat-footer text-[11px] text-slate-500">
                       {message?.createdAt &&
                         new Date(message.createdAt).toLocaleDateString("en-IN")}
                       {" "}
@@ -307,19 +346,20 @@ const MessageContainer = ({ setShowSidebar }) => {
 
           {/* Send Message */}
 
-          <form onSubmit={handleSubmit} className="p-2">
+          <form onSubmit={handleSubmit} className="pt-3 shrink-0">
 
-            <div className="flex items-center bg-white rounded-full px-3">
+            <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 shadow-sm focus-within:ring-2 focus-within:ring-sky-200 focus-within:border-sky-400">
 
               <input
                 type="text"
                 value={sendData}
                 onChange={handleMessage}
                 placeholder="Type a message..."
-                className="flex-1 py-3 outline-none"
+                aria-label="Type a message"
+                className="flex-1 min-w-0 py-3 outline-none bg-transparent text-slate-900 placeholder:text-slate-500"
               />
 
-              <button type="submit">
+              <button type="submit" disabled={sending || !sendData.trim()} aria-label="Send message" className="p-2 disabled:opacity-40 disabled:cursor-not-allowed">
 
                 {sending ? (
                   <div className="loading loading-spinner"></div>
